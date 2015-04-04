@@ -25,6 +25,9 @@ svg text {cursor:pointer;}
 #parameters .helpcommand {font-family:monospace;color:#777;width:300px;display:inline-block}
 #parameters .helpcommand b {color:black}
 #parameters input {width:4em;}
+#parameters input[type='text'] {width:7em;}
+#parameters .font-examples {color:gray;}
+#parameters .font-examples .font-name {display: inline-block; padding: .1em 1em; background-color: gray; color: white; border-radius: 7px; margin: 4px 0px; font-size: .91em;}
 #parameters input:focus {border-color:red; box-shadow: 0px 0px 4px red;}
 
 #filemenu { border: 1px solid lightGray;background-color:#9DB8D6; box-shadow: 0px -4px 7px gray; padding:7px 0px 7px 7px;}
@@ -83,11 +86,12 @@ text-shadow: 0px 1px 0px #f5f5f5;
 
 <script type='text/javascript'>
 // ---------- SGV Templates ---------------
-svgbegin = "<?xml version='1.0' encoding='UTF-8' standalone='no'?>\n<svg width='210mm' height='297mm' xmlns='http://www.w3.org/2000/svg' viewBox='0 0 210 297' xmlns:inkscape='http://www.inkscape.org/namespaces/inkscape' xmlns:sodipodi='http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd'>\n";
+svgbegin = "<?xml version='1.0' encoding='UTF-8' standalone='no'?>\n<svg width='210mm' height='297mm' xmlns='http://www.w3.org/2000/svg' viewBox='0 0 210 297' xmlns:inkscape='http://www.inkscape.org/namespaces/inkscape' xmlns:sodipodi='http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd'>\n"+
+  "<style type='text/css' > <![CDATA[ @import url(http://fonts.googleapis.com/css?family=[lfp]); ]]></style>";
 svgtitle = "<text x='[tx]' y='[tly]' id='song_title_[j]' font-size='[tfs]' font-family='Times New Roman, serif' text-anchor='begin' xml:space='preserve' rsid='title' rspos='[tpos]'>[titleline]</text>\n";
 svgchord = "<text x='[cx]' y='[cy]' id='chord_[i]_[j]' font-size='[cfs]' font-family='Times New Roman, serif' font-weight='bold' text-anchor='begin' xml:space='preserve' rsid='chords' rspos='[cpos]'>[chord]</text>\n";
 svgchordrect = "<rect x='[crx]' y='[cry]' width='[cdx]' height='[crdy]' style='stroke:black;stroke-width:0.1;stroke-opacity:1; fill:[color]'/>\n";
-svglyrics = "<text x='[lx]' y='[ly]' id='lyrics_[j]' font-size='[lfs]' font-family='Times New Roman, serif' text-anchor='begin' xml:space='preserve' rsid='lyrics' rspos='[lpos]'>[lyrics]</text>\n";
+svglyrics = "<text x='[lx]' y='[ly]' id='lyrics_[j]' font-size='[lfs]' font-family='[lfn], Times New Roman, serif' text-anchor='begin' xml:space='preserve' rsid='lyrics' rspos='[lpos]'>[lyrics]</text>\n";
 svglyricsrect = "<rect x='[lrx]' y='[lry]' width='[lrdx]' height='[lrdy]' style='stroke:none;fill:white;opacity:[lrt];'/>\n";
 svglayergrid = "<g inkscape:label='Grille' inkscape:groupmode='layer' sodipodi:insensitive='true' id='gridlayer'>\n";
 svglayerlr = "<g inkscape:label='Rectangles paroles' inkscape:groupmode='layer' sodipodi:insensitive='true' id='lyricsrectlayer'>\n";
@@ -270,7 +274,8 @@ function CreateSVG()
 		param["lry"] = param["cy"]+param["lroy"];
 		param["ly"] = param["lry"]+param["lrdy"]*param["lbl"];
 
-				// ----- lyrics ------
+		// ----- lyrics ------
+		param["lfp"] = param["lfn"].trim().replace(/\s+/g,"+");
 		if (lyricslines[j] != undefined) {
 			if (lyricslines[j]=="-") // "empty" lyrics line
 				param["crdy"] = param["crdy"]*0.5;
@@ -318,7 +323,10 @@ function CreateSVG()
 		param["cry"] += param["crdy"];
 	}
 
-	svg = svgbegin+svglayergrid+svgg+svglayerend+svglayerlr+svgl+svglayerend+svglayertext+svgt+svglayerend+svgend;
+	// set font in css
+	svgbgn = ReplaceParameters(svgbegin,param);
+
+	svg = svgbgn+svglayergrid+svgg+svglayerend+svglayerlr+svgl+svglayerend+svglayertext+svgt+svglayerend+svgend;
 
 	return svg;
 }
@@ -443,6 +451,7 @@ function ReadATGClick(evt) {
 	    var strparam = e.target.result;
 		var param = JSON.parse(strparam);
 		param["lbl"] = param["lbl"] || 0.7; // default value for new paramter (lyrics base line position)
+		param["lfn"] = param["lfn"] || ""; // default value for new paramter (lyrics font name)
 		param['fileinput']='';
 		param['filename']=f.name.replace(/\.[^.]*$/,'');
 		SetParameters(param);
@@ -552,6 +561,14 @@ function FontSizeChangeAll() {
 	$('#parameters input.fontsize').each(FontSizeChange);
 }
 //
+// Change textareas font size
+// -------------------------------------------
+function SetFontFace() {
+	fn = $(this).val();
+	$('#parameters input#lfn').val(fn).change();
+	fn = $(this).val("initial");
+}
+//
 // Up and down chords
 // -------------------------------------------
 function DownChords() {
@@ -647,6 +664,8 @@ $(function()
 	$(window).keydown(CtrlSpressed);
 	$('#fileinput').change(ReadATGClick);
 	$('#loadmodel').click(LoadModel);
+	// Font name handler
+	$('#parameters #font-examples').change(SetFontFace);
 	// move left zone handler
 	$('#movehzone').mousedown(function(e){$(document).on('mousemove',ResizeEditH).on('selectstart', false);ResizeEditH.lastX = e.pageX});
 	$(document).mouseup(function(){$(document).off('mousemove',ResizeEditH)});
@@ -737,11 +756,24 @@ $(function()
 			<div class="section" group="lyrics">
 				<div class="title">Lyrics</div>
 				<div class="options">
-				Position  : <input type=number id="lrox" min="0" max="100" value="3">,<input type=number id="lroy" min="0" max="100" value="3"><br>
-				Size  :	<input type=number id="lrdx" min="0" max="210" value="195">,<input type=number id="lrdy" min="0" max="35" value="7"><br>
-				Font size : <input type=number id="lfs" min="1" max="40" value="5" class="fontsize" textid="lyrics"><br>
-				Baseline position : <input type=number id="lbl" min="0" max="1" value="0.7" step="0.1"><br>
-				Background transparacy : <input type="range" id="lrt" min="0" max="1" step="0.1" value="0.7"/>
+					Position  : <input type=number id="lrox" min="0" max="100" value="3">,<input type=number id="lroy" min="0" max="100" value="3"><br>
+					Size  :	<input type=number id="lrdx" min="0" max="210" value="195">,<input type=number id="lrdy" min="0" max="35" value="7"><br>
+					Font size : <input type=number id="lfs" min="1" max="40" value="5" class="fontsize" textid="lyrics"><br>
+					Baseline position : <input type=number id="lbl" min="0" max="1" value="0.7" step="0.1"><br>
+					Background transparacy : <input type="range" id="lrt" min="0" max="1" step="0.1" value="0.7"/><br>
+					Font name (from <a href="http://www.google.com/fonts" target="_blank">Google Fonts</a>): <input type="text" id="lfn"/><br>
+					examples : <select id="font-examples">
+						<option value="initial"> &mdash; select font &mdash;</option>
+						<option value="" style="color:green">&mdash; reset &mdash;</option>
+						<option value="Stint Ultra Condensed">Stint Ultra Condensed</option>
+						<option value="Medula One">Medula One</option>
+						<option value="Yanone Kaffeesatz">Yanone Kaffeesatz</option>
+						<option value="Oswald">Oswald</option>
+						<option value="Open Sans Condensed">Open Sans Condensed</option>
+						<option value="Six Caps">Six Caps</option>
+						<option value="Tulpen One">Tulpen One</option>
+						<option value="Dorsa">Dorsa</option>
+					</select>
 				</div>
 			</div>
 		</div>
