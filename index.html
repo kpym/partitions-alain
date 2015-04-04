@@ -1,0 +1,769 @@
+<!DOCTYPE html PUBLIC '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xmlns='http://www.w3.org/1999/xhtml'>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>Partitions pour Alain</title>
+
+<!-- ===================== CSS ===================== -->
+<style type='text/css'>
+body {background-color:#F7F7F7; font-size=100%}
+svg text {cursor:pointer;}
+
+/* -------- SVG panel -----------*/
+#result { width:210mm; height:297mm; margin-left:427px;border: 1px solid lightGray; box-shadow: 7px 7px 7px gray; background-color:white;-webkit-transform: scale(1);-webkit-transform-origin: top left;}
+#underresult {min-height:297mm}
+
+/* -------- left panel -----------*/
+#editleft { position: fixed; left: 0; top: 0; width:413px;height:100%; padding:0px; border: 1px solid lightGray;background-color:lightBlue;z-index:1;}
+
+#parameters {padding:7px}
+#parameters .section {display:none;}
+#parameters .section.selected {display:block;}
+#parameters .title {border: 1px solid gray; margin: 14px 14px 3px 0px; border-radius: 4px; padding: 1px 7px; background-color: #8CC3D5; cursor:pointer;cursor:hand}
+#parameters .paramopen:before {content:"\25BC \0020";}
+#parameters .paramclose:before {content:"\25BA \0020";}
+#parameters .helpcommand {font-family:monospace;color:#777;width:300px;display:inline-block}
+#parameters .helpcommand b {color:black}
+#parameters input {width:4em;}
+#parameters input:focus {border-color:red; box-shadow: 0px 0px 4px red;}
+
+#filemenu { border: 1px solid lightGray;background-color:#9DB8D6; box-shadow: 0px -4px 7px gray; padding:7px 0px 7px 7px;}
+#filename {text-align:right; width:10em;}
+#movehzone {position:absolute; right:0px; top:0px; width:5px; height:100%;cursor:e-resize;}
+#movehzone:hover {background-color:red}
+
+.key {
+display: inline-block;
+color: #777;
+font: bold 11pt arial;
+text-decoration: none;
+text-align: center;
+padding: 3px 4px;
+margin: 5px;
+min-width: 2em;
+min-height: 1ex;
+background: #eff0f2;
+border-radius: 4px;
+border-top: 1px solid #f5f5f5;
+box-shadow: inset 0 0 25px #e8e8e8, 0 1px 0 #c3c3c3, 0 2px 0 #c9c9c9, 0 2px 3px #333;
+text-shadow: 0px 1px 0px #f5f5f5;
+}
+/* -------- bottom panel -----------*/
+#editbottom { position: fixed; left: 0; bottom: 0; width:100%;height:200px; padding:0px; border: 1px solid lightGray;background-color:lightBlue;z-index:2;}
+#editbottom #textareas {height:80%;margin: 4px 11px 4px 4px;}
+#editbottom textarea {display:none; width:100%; height:100%; white-space:pre; overflow:auto;font-family: 'Times New Roman', serif;font-size:5mm;}
+#editbottom textarea.selected {display:block;}
+#editbottom textarea:focus {border-color:red; box-shadow: 0px 0px 4px red;}
+#editbottom #showcaret {background: red; width: 40px; min-height: 40px; position: absolute;display:none;z-index:3;}
+#bottomtabs {position:absolute; left:0px; bottom:0px;width: 100%;height:14%;background-color:black;}
+#bottomtabs span {padding:0px 7px; margin-left: 7px; border:solid gray; border-width: 0px 1px;background-color:gray;cursor:pointer}
+#bottomtabs span.selected {background-color:lightBlue;}
+#movevzone {position:absolute; right:0px; top:0px; height:5px; width:100%;cursor:n-resize;}
+#movevzone:hover {background-color:red}
+
+#zoom {position:absolute; right:0px; top:0px; display:none; z-index:4;padding:7px; background:white;border:1px solid gray; box-shadow:-1px 1px 7px #f77; border-radius:0px 0px 0px 4px; color:red;}
+
+/* -------- print -----------*/
+@media print
+{
+	body {background-color:transparent;}
+	#editleft, #editbottom, #underresult { display: none;}
+	#result {margin-left:0px; border:none; box-shadow:none; background-color:transparent; -webkit-transform:scale(1) !important;height:295mm;}
+}
+</style>
+
+<!-- ===================== JavaScript ===================== -->
+
+<script src='jquery.min.js' type="application/javascript"></script>
+<script src="FileSaver.min.js" type="application/javascript"></script>
+<script src="jquery.mousewheel.js" type="application/javascript"></script>
+<script src="textarea-helper.js" type="application/javascript"></script>
+<script src="jquery.hotkeys.js" type="application/javascript"></script>
+
+
+<script type='text/javascript'>
+// ---------- SGV Templates ---------------
+svgbegin = "<?xml version='1.0' encoding='UTF-8' standalone='no'?>\n<svg width='210mm' height='297mm' xmlns='http://www.w3.org/2000/svg' viewBox='0 0 210 297' xmlns:inkscape='http://www.inkscape.org/namespaces/inkscape' xmlns:sodipodi='http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd'>\n";
+svgtitle = "<text x='[tx]' y='[tly]' id='song_title_[j]' font-size='[tfs]' font-family='Times New Roman, serif' text-anchor='begin' xml:space='preserve' rsid='title' rspos='[tpos]'>[titleline]</text>\n";
+svgchord = "<text x='[cx]' y='[cy]' id='chord_[i]_[j]' font-size='[cfs]' font-family='Times New Roman, serif' font-weight='bold' text-anchor='begin' xml:space='preserve' rsid='chords' rspos='[cpos]'>[chord]</text>\n";
+svgchordrect = "<rect x='[crx]' y='[cry]' width='[cdx]' height='[crdy]' style='stroke:black;stroke-width:0.1;stroke-opacity:1; fill:[color]'/>\n";
+svglyrics = "<text x='[lx]' y='[ly]' id='lyrics_[j]' font-size='[lfs]' font-family='Times New Roman, serif' text-anchor='begin' xml:space='preserve' rsid='lyrics' rspos='[lpos]'>[lyrics]</text>\n";
+svglyricsrect = "<rect x='[lrx]' y='[lry]' width='[lrdx]' height='[lrdy]' style='stroke:none;fill:white;opacity:[lrt];'/>\n";
+svglayergrid = "<g inkscape:label='Grille' inkscape:groupmode='layer' sodipodi:insensitive='true' id='gridlayer'>\n";
+svglayerlr = "<g inkscape:label='Rectangles paroles' inkscape:groupmode='layer' sodipodi:insensitive='true' id='lyricsrectlayer'>\n";
+svglayertext = "<g inkscape:label='Texte' inkscape:groupmode='layer' id='textlayer'>\n";
+svglayerend = "</g>";
+svgend = "</svg>\n";
+//
+// Replace parameters in SVG template
+// -------------------------------------------
+function ReplaceParameters(str,param)
+{
+	for (pat in param)
+			str = str.replace(RegExp("\\["+pat+"\\]","g"),param[pat]);
+	return str;
+}
+
+// ---------- formating strings -----------
+format_p = Array();
+format_r = Array();
+
+// html entities
+format_p.push(/&/g);
+format_r.push("&amp;");
+format_p.push(/</g);
+format_r.push("&lt;");
+format_p.push(/>/g);
+format_r.push("&gt;");
+
+// escapeed symbols
+format_p.push(/__/g); // example : __
+format_r.push("&#95;");
+format_p.push(/""/g); // example : ""
+format_r.push("&#39;");
+// formating
+format_p.push(/[_"]([^_"|\r\n]+)[_"]/g); // example : _underline_
+format_r.push("<tspan style='text-decoration:underline' xml:space='preserve'>$1</tspan>");
+format_p.push(/\*\*/g); // example : **
+format_r.push("&#42;");
+format_p.push(/\*([^*|\r\n]+)\*/g); // example : *bold*
+format_r.push("<tspan style='font-weight:bold' xml:space='preserve'>$1</tspan>");
+format_p.push(/[~§]([^~§|\r\n]+)[~§]/g); // example : ~italics~
+format_r.push("<tspan style='font-style:italic' xml:space='preserve'>$1</tspan>");
+format_p.push(/%{([^|\r\n}]*)}([^%|\r\n]*)%/g); // example : *%{font-size:7;fill:red}small red%
+format_r.push("<tspan style='$1' xml:space='preserve'>$2</tspan>");
+format_p.push(/\t/g); // example : *%{font-size:7;fill:red}small red%
+format_r.push("        ");
+//
+// Format the string
+// -------------------------------------------
+function FormatStr(str)
+{
+	var i;
+	for (i in format_p)
+		str = str.replace(format_p[i],format_r[i]);
+	return str;
+}
+//
+// Load parameters
+// -------------------------------------------
+function SetParameters(param)
+{
+	for (id in param)
+		$('#'+id).val(param[id]);
+
+	DisplaySVG();
+	FontSizeChangeAll();
+}
+//
+// Model selec change and default Init
+// -------------------------------------------
+var model = new Array();
+// 4 - columns
+model[0] = {"filename":"Alain's guitar tab","tx":3,"ty":10,"tfs":8,"title":"*Tom Dooley*                              ~Trad.~ Kingston Trio\n","gnx":4,"gny":15,"gx":1,"gy":17,"gdx":208,"gdy":270,"codx":0.7,"cody":0,"cfs":6,"chords":"E{LightCyan}|E|E|B7\nB7|B7|B7|E\nE{LightPink}|E|E|B7\nB7|B7|B7|E\nE{LightPink}|E|E|B7\nB7|B7|B7|E\nE{LightPink}|E|E|B7\nB7|B7|B7|E\nE{LightPink}|E|E|B7\nB7|B7|B7|E\nE{LightCyan}|E|E|B7\nB7|B7|B7|E\nE{LightPink}|E|E|B7\nB7|B7|B7|E\nE{LightPink}|E|E|B7","lrox":1,"lroy":3,"lrdx":205,"lrdy":7,"lfs":5,"lrt":"0.7","lyrics":"_Hang_ down your _head_    Tom         Dooley, _Hang_ down your _head_ and cry,\n_Hang_ down your _head_    Tom         Dooley, poor boy, you’re goin’to die\n%{fill:red}(Paroles non formatées à prtir d'ici !)% I met her on themountain,that's where I tookherlife,\nMet her upon the mountain, I stabbed her with my knife\nThis tim e tomorrow reckon where I’ll be,\nIf it was not for Grayson, I'd now be in Ten - nes - see\nThis time tomorrow morning, this soldier boy will be,\nDown in a lonesome valley, hangin’ from some white oak tree\nThey’re gonna try Ann Melton, can’t see no reason why,\nThere’s only one who’s guilty, and now I’m goin’ to die","tpos":183,"j":14,"tly":10,"titleline":"<tspan style='font-weight:bold' xml:space='preserve'>Tom Dooley</tspan>                              <tspan style='font-style:italic' xml:space='preserve'>Trad.</tspan> Kingston Trio","cdx":52,"cdy":18,"lrx":2,"lx":2.21,"cry":287,"cpos":237,"lpos":640,"crdy":18,"cy":276.38,"lry":279.38,"ly":284.28,"i":3,"crx":157,"cx":157.7,"color":"white","chord":"B7"};
+// 8 - columns
+model[1] = {"filename":"Alain's guitar tab","tx":3,"ty":10,"tfs":8,"title":"*Tom Dooley*                              ~Trad.~ Kingston Trio\n","gnx":8,"gny":15,"gx":1,"gy":17,"gdx":208,"gdy":270,"codx":0.7,"cody":0,"cfs":6,"chords":"E{LightCyan}|E|E|B7|B7|B7|E|F\nB7|B7|B7|E|B7|B7|B7|E\nB7|B7|B7|E|B7|B7|B7|E\nB7|B7|B7|E|B7|B7|B7|E\nB7{Lightgreen}|B7|B7|E|B7|B7|B7|E\nB7|B7|B7|E|B7|B7|B7|E\nB7|B7|B7|E|B7|B7|B7|E\nB7|B7|B7|E|B7|B7|B7|E\nE{LightCyan}|E|E|B7|B7|B7|E|F\nB7|B7|B7|E|B7|B7|B7|E\nB7|B7|B7|E|B7|B7|B7|E\nB7|B7|B7|E|B7|B7|B7|E\nB7{Lightgreen}|B7|B7|E|B7|B7|B7|E\nB7|B7|B7|E|B7|B7|B7|E\nB7|B7|B7|E|B7|B7|B7|E","lrox":1,"lroy":3,"lrdx":205,"lrdy":7,"lfs":5,"lrt":"0.7","lyrics":"_Hang_ down your _head_    Tom         Dooley, _Hang_ down your _head_ and cry,\n_Hang_ down your _head_    Tom         Dooley, poor boy, you’re goin’to die\n%{fill:red}(Paroles non formatées à prtir d'ici !)% I met her on themountain,that's where I tookherlife,\nMet her upon the mountain, I stabbed her with my knife\nThis tim e tomorrow reckon where I’ll be,\nIf it was not for Grayson, I'd now be in Ten - nes - see\nThis time tomorrow morning, this soldier boy will be,\nDown in a lonesome valley, hangin’ from some white oak tree\nThey’re gonna try Ann Melton, can’t see no reason why,\nThere’s only one who’s guilty, and now I’m goin’ to die","tpos":183,"j":14,"tly":10,"titleline":"<tspan style='font-weight:bold' xml:space='preserve'>Tom Dooley</tspan>                              <tspan style='font-style:italic' xml:space='preserve'>Trad.</tspan> Kingston Trio","cdx":26,"cdy":18,"lrx":2,"lx":2.21,"cry":287,"cpos":370,"lpos":640,"crdy":18,"cy":276.38,"lry":279.38,"ly":284.28,"i":7,"crx":183,"cx":183.7,"color":"white","chord":"E"};
+// formating example
+model[2] = {"filename":"Alain's guitar tab","tx":3,"ty":10,"tfs":8,"title":"*Bold Title*                              %{fill:blue}~Italic~ Blue Normal%\n%{font-size:4}Small text%\n%{font-family:monospace}And some text in monospace%\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n~And some text at the end  ... writen in the title section !~\n%{font-family:fantasy}Bla bla bla en fantasy%\n%{font-family:sans-serif}Bla bla bla en sans-serif%\n%{font-family:serif}Bla bla bla en serif%\n%{font-family:cursive}Bla bla bla en cursive%\n%{font-family:monospace}Bla bla bla en monospace%\n","gnx":4,"gny":11,"gx":1,"gy":35,"gdx":208,"gdy":198,"codx":0.7,"cody":0,"cfs":6,"chords":"{LightCyan}%{fill:red}E%|E|E|B7\nB7|B7|B7|E\nE{LightPink}|E|E|B7\nB7|B7|B7|E\nE{GreenYellow}|E|E|B7\nB7|B7|B7|E\n-\nE{Coral}|E|E|B7\nB7|B7|B7|E\nE{Gold}|E|E|B7","lrox":1,"lroy":3,"lrdx":195,"lrdy":7,"lfs":5,"lrt":"0.7","lyrics":"-\n_Hang_ down your *_head_*    Tom         Dooley, _Hang_ down your _head_ and cry,\n_Hang_ down your _head_    Tom         Dooley, poor boy, you’re goin’to die\n%{fill:red}(Paroles non formatées à prtir d'ici !)% I met her on themountain,that's where I tookherlife,\nMet her upon the mountain, I stabbed her with my knife\nThis tim e tomorrow reckon where I’ll be,\nIf it was not for Grayson, I'd now be in Ten - nes - see\nThis time tomorrow morning, this soldier boy will be,\nDown in a lonesome valley, hangin’ from some white oak tree\nThey’re gonna try Ann Melton, can’t see no reason why,\n","tpos":959,"j":10,"tly":250,"titleline":"<tspan style='font-family:monospace' xml:space='preserve'>Bla bla bla en monospace</tspan>","cdx":52,"cdy":18,"lrx":2,"lx":2.21,"cry":216.62,"cpos":153,"lpos":587,"crdy":18,"cy":206,"lry":209,"ly":213.9,"i":3,"crx":157,"cx":157.7,"color":"white","chord":"B7"};
+function LoadModel()
+{
+	nm = parseInt($('#model').val());
+	if ( nm >= 0)
+		SetParameters(model[nm]);
+	$('#model').val(-1);
+}
+//
+// Init parameters
+// -------------------------------------------
+function InitParam()
+{
+	if (localStorage && localStorage['atj_parameters'] != undefined)
+		SetParameters(JSON.parse(localStorage['atj_parameters']));
+	else
+		SetParameters(model[0]);
+}
+//
+// Read parameters
+// -------------------------------------------
+var cach_param = new Object(); // all parameters
+function GetParameters()
+{
+	$("#parameters input, #parameters textarea, #editbottom textarea, #filemenu #filename").each(function() {
+		if ($(this).attr("type")=="number")
+			cach_param[$(this).attr("id")] = parseFloat($(this).val());
+		else
+			cach_param[$(this).attr("id")] = $(this).val();
+	});
+
+	if (localStorage)
+		localStorage['atj_parameters'] = JSON.stringify(cach_param);
+
+	return cach_param;
+}
+//
+// Change the window title
+// -------------------------------------------
+function ChangeTitle()
+{
+	filename = $('#filemenu #filename').val();
+	if (filename.replace(/\s/g,'').length)
+		$('title').html(filename);
+}
+//
+// Create SVG from parameters
+// -------------------------------------------
+function CreateSVG()
+{
+	var param = GetParameters(); // all parameters
+	var i,j; // positions
+
+	svgt = "";
+	svgl = "";
+	svgg = "";
+	// ----- Window Title -----
+	ChangeTitle();
+
+	// ----- title ------
+	titlelines = param["title"].split("\n");
+	titlelines_fmt = FormatStr(param["title"]).split("\n");
+
+	param["tpos"]=0;
+	for (j=0; j < titlelines.length; j++)
+	{
+		if (titlelines_fmt[j].replace(/\s/g,'').length) {
+			param["j"] = j;
+			param["tly"] = param["ty"]+(j)*param["tfs"];
+			param["titleline"] = titlelines_fmt[j];
+			svgt += ReplaceParameters(svgtitle,param);
+			param["tpos"] += titlelines[j].length;
+		}
+		param["tpos"] += 1;
+	}
+
+	param["cdx"] = param["gdx"]/param["gnx"];
+	param["cdy"] = param["gdy"]/param["gny"];
+
+	param["lrx"] = param["gx"]+param["lrox"];
+	param["lx"] = param["lrx"]+0.21;
+
+	param["cry"] = param["gy"];
+
+	lyricslines = param["lyrics"].split("\n");
+	lyricslines_fmt = FormatStr(param["lyrics"]).split("\n");
+	chordlines = param["chords"].split("\n");
+	chordlines_fmt = FormatStr(param["chords"]).split("\n");
+
+	param["cpos"] = 0;
+	param["lpos"] = 0;
+	for (j=0; j < Math.max(chordlines.length,lyricslines.length); j++)
+	{
+		param["j"] = j; // needed for reverse search
+		nochordline = (chordlines[j] != undefined && chordlines[j] == "-"); // "empty" cords line
+		if (nochordline) {
+			param["crdy"] = param["cdy"]*0.59-param["cody"];
+			param["cy"] = param["cry"];
+		}
+		else {
+			param["crdy"] = param["cdy"];
+			param["cy"] = param["cry"]+param["cdy"]*0.41+param["cody"];
+		}
+		param["lry"] = param["cy"]+param["lroy"];
+		param["ly"] = param["lry"]+param["lrdy"]*param["lbl"];
+
+				// ----- lyrics ------
+		if (lyricslines[j] != undefined) {
+			if (lyricslines[j]=="-") // "empty" lyrics line
+				param["crdy"] = param["crdy"]*0.5;
+			else {
+				param["lyrics"] = lyricslines_fmt[j];
+				svgt += ReplaceParameters(svglyrics,param);
+				svgl += ReplaceParameters(svglyricsrect,param);
+			}
+			param["lpos"] += lyricslines[j].length;
+		}
+		param["lpos"] += 1;
+
+		// ----- chords ------
+		if (chordlines[j] != undefined) {
+			if (nochordline) {
+				chordlines[j] = Array(param["gnx"]).join("|");
+				chordlines_fmt[j] = chordlines[j];
+			}
+			chordlines[j] = chordlines[j].split(/[|]/);
+			chordlines_fmt[j] = chordlines_fmt[j].split(/[|]/);
+			for (i=0; i < chordlines[j].length; i++)
+			{
+
+				param["i"] = i;
+				param["crx"] = param["gx"]+i*param["cdx"];
+				param["cx"] = param["crx"]+param["codx"];
+
+				color = chordlines[j][i].match(/\{([^}]*)\}/);
+				if (color)
+					param["color"] = color[1];
+				else
+					param["color"] = "white";
+				param["chord"] = chordlines_fmt[j][i].replace(/\{([^}]*)\}/,"");
+
+				svgt += nochordline ? "":ReplaceParameters(svgchord,param);
+				svgg += ReplaceParameters(svgchordrect,param);
+
+				param["cpos"] += chordlines[j][i].length+1;
+			}
+			if (nochordline) // correct position if empty line
+				param["cpos"] -= param["gnx"]-2;
+
+		}
+		// new line top
+		param["cry"] += param["crdy"];
+	}
+
+	svg = svgbegin+svglayergrid+svgg+svglayerend+svglayerlr+svgl+svglayerend+svglayertext+svgt+svglayerend+svgend;
+
+	return svg;
+}
+//
+// Replace tabulations
+// -------------------------------------------
+function TabReplace(e)
+{
+    if(e.keyCode === 9) { // tab was pressed
+        // text to insert
+		if (event.shiftKey)
+			var spaces = "                "; // Shift = 16 spaces
+		else
+			var spaces = "        "; // else 8 spaces
+		// get caret position/selection
+        var start = this.selectionStart;
+        var end = this.selectionEnd;
+
+        var $this = $(this);
+        var value = $this.val();
+
+        // set textarea value to: text before caret + tab + text after caret
+        $this.val(value.substring(0, start)
+                    + spaces
+                    + value.substring(end));
+
+        // put caret at right position again (add one for the tab)
+        this.selectionStart = this.selectionEnd = start + spaces.length;
+
+        // prevent the focus lose
+        e.preventDefault();
+    }
+}
+//
+// Reset SVG area
+// -------------------------------------------
+function DisplaySVG()
+{
+	$("#result").html(CreateSVG());
+}
+//
+// Format the string
+// -------------------------------------------
+var emptykeys = [16,17,18,19,20,27,33,34,35,36,37,38,39,40];
+function CreateAfterKeyUp(e)
+{
+	if(emptykeys.indexOf(e.keyCode) == -1) // nothing change for ctrl, shift, arrows, ...
+		DisplaySVG();
+}
+//
+// Save SVG or ATJ file
+// -------------------------------------------
+function SaveTextFile(text,mime,ext)
+{
+	DisplaySVG();
+	window.URL = window.URL || window.webkitURL;
+	if (window.Blob) {
+		// new style
+		var blob = new Blob([text], { type: mime });
+	}
+	else
+    if (window.BlobBuilder) {
+    	// old scool
+		window.BlobBuilder = window.BlobBuilder || window.WebKitBlobBuilder ||
+                     		window.MozBlobBuilder || window.MSBlobBuilder;
+		var bb = new BlobBuilder();
+		bb.append(text);
+		var blob = bb.getBlob(mime);
+	}
+	else {
+		alert('Can\'t save file : no Blob, nor BlobBuilder :(')
+	}
+
+	filename = $("#filename").val()+"."+ext;
+	saveAs(blob, filename);
+}
+//
+// Handle SVG Save Click
+// -------------------------------------------
+function SaveSVGClick()
+{
+	text = CreateSVG();
+	mime = "image/svg+xml;charset=UTF-8";
+	ext = "svg";
+
+	SaveTextFile(text,mime,ext);
+}
+//
+// Handle ATJ Save Click
+// -------------------------------------------
+function SaveATGClick()
+{
+	var param = GetParameters();
+
+	text = JSON.stringify(param);
+	mime = "application/json";
+	ext = "atj";
+
+	SaveTextFile(text,mime,ext);
+}
+//
+// Handle Ctrl+S keydown
+// -------------------------------------------
+function CtrlSpressed(event) {
+		if (!((event.ctrlKey||event.metaKey) && event.keyCode==83))
+			return true; // another key
+
+	    event.preventDefault();
+	    SaveATGClick();
+	    return false;
+}
+//
+// Handle ATJ Read Click
+// -------------------------------------------
+function ReadATGClick(evt) {
+    //Retrieve the first (and only!) File from the FileList object
+    var f = evt.target.files[0];
+
+    if (f) {
+      var r = new FileReader();
+      r.onload = function(e) {
+	    var strparam = e.target.result;
+		var param = JSON.parse(strparam);
+		param["lbl"] = param["lbl"] || 0.7; // default value for new paramter (lyrics base line position)
+		param['fileinput']='';
+		param['filename']=f.name.replace(/\.[^.]*$/,'');
+		SetParameters(param);
+      }
+      r.readAsText(f);
+    } else {
+      alert("Failed to load file");
+    }
+}
+//
+// Reverse search from mclick on SVG
+// -------------------------------------------
+function ClickSVGText(e)
+{   //Relative ( to its parent) mouse position
+	group = $(this).attr("rsid");
+	id = '#'+group;
+	rspos = $(this).attr("rspos");
+	ta = $(id).get(0); // the textarea
+	SelectTab(group);
+	// set the caret position
+	$(id).focus();
+	ta.selectionStart = ta.selectionEnd = rspos;
+
+	// scroll text area
+	stop = $(id).scrollTop();
+	pos = $(id).textareaHelper('caretPos');
+	stop += pos.top-$(id).height()/2;
+	$(id).scrollTop(stop);
+	$(id).focus();
+
+	// show red square over caret
+	pos = $(id).textareaHelper('caretPos');
+	cpos = $(id).position();
+	cpos.top += pos.top;
+	cpos.left += pos.left-20;
+	$('#showcaret').css(cpos).show().fadeOut('slow');
+
+}
+//
+// Resize left panel
+// -------------------------------------------
+function ResizeEditH(e)
+{
+	offsetX = e.pageX - ResizeEditH.lastX
+	ResizeEditH.lastX = e.pageX;
+	oldwidth = $('#editleft').width();
+	newwidth = oldwidth+offsetX;
+	$('#editleft').width(newwidth);
+	$('#editleft textarea').width("95%");
+	$('#result').css('margin-left',newwidth+14);
+}
+//
+// Resize bottom panel
+// -------------------------------------------
+function ResizeEditV(e)
+{
+	offsetY = e.pageY - ResizeEditV.lastY
+	ResizeEditV.lastY = e.pageY;
+	oldheight = $('#editbottom').height();
+	newheight = oldheight-offsetY;
+	if (newheight < 7)
+		newheight = 7;
+	$('#editbottom').height(newheight);
+	$('#editbottom textarea').height("95%");
+}
+//
+// Click Tab
+// -------------------------------------------
+function ClickBottomTab(e)
+{
+	group = $(this).attr("group");
+	SelectTab(group);
+}
+function SelectTab(group)
+{
+	$('[group]').removeClass("selected");
+	$('[group='+group+']').addClass("selected");
+}
+//
+// Zoom SVG
+// -------------------------------------------
+function Zoom(event, delta, deltaX, deltaY) {
+
+	if (typeof(this.zoomFactor) == 'undefined' ) {
+		this.zoomFactor = 1;
+	}
+
+	if(event.altKey || event.shiftKey) {
+		if (delta < 0)
+			this.zoomFactor = this.zoomFactor > 0.3 ? this.zoomFactor-0.1 : this.zoomFactor;
+		else
+			this.zoomFactor = this.zoomFactor < 1 ? this.zoomFactor+0.1 : this.zoomFactor;
+		$('#result').css("-webkit-transform", "scale("+this.zoomFactor+")");
+		$('#zoomvalue').text(Math.round(this.zoomFactor*100));
+		$('#zoom').show().delay(1400).fadeOut(700);
+		event.preventDefault();
+	}
+}
+//
+// Change textareas font size
+// -------------------------------------------
+function FontSizeChange() {
+	id = $(this).attr('textid');
+	$('#'+id).css('font-size',$(this).val()+'mm')
+}
+function FontSizeChangeAll() {
+	$('#parameters input.fontsize').each(FontSizeChange);
+}
+//
+// Up and down chords
+// -------------------------------------------
+function DownChords() {
+	var up = {
+				"C" : "B",
+				"C#" : "C",
+				"Db" : "C",
+				"D" : "C#",
+				"D#" : "D",
+				"Eb" : "D",
+				"E" : "Eb",
+				"F" : "E",
+				"F#" : "F",
+				"Gb" : "F",
+				"G" : "F#",
+				"G#" : "G",
+				"Ab" : "G",
+				"A" : "Ab",
+				"A#" : "A",
+				"Bb" : "A",
+				"B" : "Bb"
+			};
+	ChangeChords(up);
+ }
+
+function UpChords() {
+	var down = {
+					"C" : "C#",
+					"C#" : "D",
+					"Db" : "D",
+					"D" : "Eb",
+					"D#" : "E",
+					"Eb" : "E",
+					"E" : "F",
+					"F" : "F#",
+					"F#" : "G",
+					"Gb" : "G",
+					"G" : "Ab",
+					"G#" : "A",
+					"Ab" : "A",
+					"A" : "Bb",
+					"A#" : "B",
+					"Bb" : "B",
+					"B" : "C"
+				};
+	ChangeChords(down);
+}
+function ChangeChords(transf)
+{
+	var tofind = /(\W|^)(C[#]{0,1}|D[#b]{0,1}|E[b]{0,1}|F[#]{0,1}|G[#b]{0,1}|A[#b]{0,1}|B[b]{0,1})/g
+
+	var param = GetParameters();
+
+	param['chords'] = param['chords'].replace(tofind, function(match,pr,ch) {
+        // The arguments are:
+        // 1: The whole match (string)
+        // 2..n+1: The captures (string or undefined)
+        // n+2: Starting position of match (0 = start)
+        // n+3: The subject string.
+        // (n = number of capture groups)
+
+        return pr+(transf[ch] ? transf[ch] : ch);
+    });
+
+	SetParameters(param);
+}
+//
+// Hide/display bottom pannel
+// -------------------------------------------
+function ToggleBottomPanel() {
+	$('#editbottom').toggle();
+}
+
+//
+// Init function
+// -------------------------------------------
+$(function()
+{
+	// init parameters on load
+	InitParam();
+	// hide display parameters and help handler
+	$('#parameters .title').addClass('paramopen').click(function(){$(this).toggleClass('paramopen paramclose').next().slideToggle('slow');});
+	$('#parameters>.title').click()
+	// Update display on changes
+	$('#editbottom textarea').keyup(CreateAfterKeyUp);
+	$('#parameters input').change(DisplaySVG);
+	$('#parameters input.fontsize').change(FontSizeChange);
+	// Tab key handler
+	$("#editbottom textarea").keydown(TabReplace);
+	// buttons handlers
+	$('#savesvg').click(SaveSVGClick);
+	$('#saveatj').click(SaveATGClick);
+	$(window).keydown(CtrlSpressed);
+	$('#fileinput').change(ReadATGClick);
+	$('#loadmodel').click(LoadModel);
+	// move left zone handler
+	$('#movehzone').mousedown(function(e){$(document).on('mousemove',ResizeEditH).on('selectstart', false);ResizeEditH.lastX = e.pageX});
+	$(document).mouseup(function(){$(document).off('mousemove',ResizeEditH)});
+	// move bottom zone handler
+	$('#movevzone').mousedown(function(e){$(document).on('mousemove',ResizeEditV).on('selectstart', false);ResizeEditV.lastY = e.pageY});
+	$(document).mouseup(function(){$(document).off('mousemove',ResizeEditV)});
+	// bottom tabs
+	$('#bottomtabs span').click(ClickBottomTab);
+	$('#bottomtabs span[group=title]').click();
+	// reverse search
+	$('#result').on('dblclick','svg text',ClickSVGText);
+	$('body').mousewheel(Zoom);
+	// Set the window title
+	$('#filemenu #filename').keyup(ChangeTitle).change(ChangeTitle);
+	// Shortcuts
+	$('body, textarea, input').bind('keydown', 'shift+alt', ToggleBottomPanel);
+
+});
+</script>
+</head>
+
+<!-- ===================== HTML ===================== -->
+<body>
+	<!-- ========== Left panel =============== -->
+	<div id='editleft'>
+		<!-- ====== File panel ===== -->
+		<div id="filemenu">
+		<label>Save : <input type="text" id="filename" value="Song"/>&nbsp;<button type="button" id="savesvg">Save .SVG</button>&nbsp;</label><button type="button" id="saveatj">Save .ATJ</button><br>
+		Read : <input type="file" id="fileinput" /><br>
+		<select id="model">
+			<option value="-1" selected="selected"> -- choose model -- </option>
+			<option value="0">4 columns</option>
+			<option value="1">8 columns</option>
+			<option value="2">Formating example</option>
+		</select>
+		<button id="loadmodel">Load model &#x25B6;</button>
+		<div id="movehzone"></div>
+		</div>
+
+		<div id='parameters'>
+			<!-- ======= Help ======== -->
+			<div class="title">Help <span style="color:gray">(click here)</span></div>
+			<div class="options">
+				<span class="helpcommand"><b>*</b>Bold<b>*</b></span><b>Bold</b><br>
+				<span class="helpcommand"><b>~</b>Italic<b>~</b> or <b>§</b>Italic<b>§</b></span><i>Italic</i><br>
+				<span class="helpcommand"><b>_</b>Underline<b>_</b> or <b>"</b>Underline<b>"</b></span><u>Underline</u><br>
+				<span class="helpcommand"><b>%{fill:red}</b>Red text<b>%</b></span><span style="color:red">Red text</span><br>
+				<span class="helpcommand"><b>%{font-size:5}</b>5mm<b>%</b></span><span style="font-size:5mm">5mm</span><br>
+				<span class="helpcommand"><b>%{font-family:monospace}</b>Courrier<b>%</b></span><span style="font-family:monospace;">Courrier</span><br>
+				<span class="helpcommand"><b>%{fill:red;font-size:3}</b>Combined<b>%</b></span><span style="color:red;font-size:3mm">Combined</span><br>
+				<br/>
+				<i>Cells are separated by <b>|</b></i><br>
+				<i>Cell <a href="http://fr.wikipedia.org/wiki/Couleurs_du_Web" target="_blank">color</a> is declared like this : <span style="font-family:monospace">{lightPink}</span> or <span style="font-family:monospace">{#FFB6C1}</span></i>
+				<i>Line equal to <b>-</b> is reduced.</i><br/>
+				<hr>
+				<span class="key">&#x21E5;</span> = 8 spaces, <span class="key">&#x21E7;</span> + <span class="key">&#x21E5;</span> = 16 spaces.</br>
+				<span class="key">&#x21E7;</span> + Mouse
+						<svg version="1.1" width="2.16em" height="1.225em" viewBox="-9.00 -8.21 18.00 10.21" fill-rule="nonzero" stroke-miterlimit="10" style="font-family: &apos;Times New Roman&apos;; font-weight:normal" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"> <path d="M 5.00,0.00 A 5.00 5.00 0 1 0 -5.00,0.00" stroke="black" stroke-width="0.30" fill="none"/> <polyline stroke="black" stroke-width="0.30" fill="none" points="0.00,-5.00 0.00,0.00"/> <polyline stroke="black" stroke-width="0.30" fill="none" points="2.03,-4.57 0.00,0.00"/> <polyline stroke="black" stroke-width="0.30" fill="none" points="3.72,-3.35 0.00,0.00"/> <polyline stroke="black" stroke-width="0.30" fill="none" points="4.70,-1.71 0.00,0.00"/> <polyline stroke="black" stroke-width="0.30" fill="none" points="0.00,0.00 -4.70,-1.71"/> <polyline stroke="black" stroke-width="0.30" fill="none" points="0.00,0.00 -2.03,-4.57"/> <polyline stroke="black" stroke-width="0.30" fill="none" points="0.00,0.00 -3.72,-3.35"/> <path d="M 3.00,0.00 A 3.00 3.00 0 1 0 -3.00,0.00 L 3.00,0.00 Z" stroke="white" stroke-width="0.30" fill="white"/> <polyline stroke="black" stroke-width="0.30" fill="none" points="-7.00,0.00 7.00,0.00"/> <path d="M 5.92,-2.09 A 6.32 6.32 0 0 0 -6.07,-1.67" stroke="black" stroke-width="0.30" fill="none"/> <polygon stroke="black" stroke-width="0.30" fill="black" points="5.92,-2.09 5.69,-3.22 5.19,-2.98 5.92,-2.09"/> <polygon stroke="black" stroke-width="0.30" fill="black" points="-6.07,-1.67 -5.40,-2.61 -5.92,-2.82 -6.07,-1.67"/></svg>
+				= Zoom.<br>
+				<span class="key">&#x21E7;</span> + <span class="key">&#x2325;</span> = Show / Hide bottom panel.
+			</div>
+			<!-- ======= Title ======== -->
+			<div class="section" group="title">
+				<div class="title">Title</div>
+				<div class="options">
+				position : <input type=number id="tx" min="0" max="210" value="10">, <input type=number id="ty" min="0" max="297" value="10"><br>
+				font size : <input type=number id="tfs" min="1" max="40" value="8" class="fontsize" textid="title">
+				</div>
+			</div>
+
+			<!-- ======= Chords ======== -->
+			<div class="section" group="chords">
+				<div class="title">Chords</div>
+				<div class="options">
+				Grid : <input type=number id="gnx" min="1" max="10" value="4"> columns x <input type=number id="gny" min="1" max="30" value="10"> rows<br>
+				Grid position : <input type=number id="gx" min="0" max="210" value="7">,<input type=number id="gy" min="0" max="297" value="21"><br>
+				Grid size : <input type=number id="gdx" min="0" max="210" value="196">,<input type=number id="gdy" min="0" max="297" value="245"><br>
+				Chord offset : <input type=number id="codx" step="0.1" value="0.7">,<input type=number id="cody" step="0.1" value="0"><br>
+				Font size : <input type=number id="cfs" min="1" max="40" value="8" class="fontsize" textid="chords"><br>
+				<hr>
+				Transformation :
+				<button onclick="UpChords()">&#x266F;</button>
+				<button onclick="DownChords()">&#x266D;</button>
+				</div>
+			</div>
+
+			<!-- ======= Lyrics ======== -->
+			<div class="section" group="lyrics">
+				<div class="title">Lyrics</div>
+				<div class="options">
+				Position  : <input type=number id="lrox" min="0" max="100" value="3">,<input type=number id="lroy" min="0" max="100" value="3"><br>
+				Size  :	<input type=number id="lrdx" min="0" max="210" value="195">,<input type=number id="lrdy" min="0" max="35" value="7"><br>
+				Font size : <input type=number id="lfs" min="1" max="40" value="5" class="fontsize" textid="lyrics"><br>
+				Baseline position : <input type=number id="lbl" min="0" max="1" value="0.7" step="0.1"><br>
+				Background transparacy : <input type="range" id="lrt" min="0" max="1" step="0.1" value="0.7"/>
+				</div>
+			</div>
+		</div>
+	</div>
+	<!-- ========== Bottom panel =============== -->
+	<div id='editbottom'>
+		<div id="movevzone"></div>
+		<div id="textareas">
+			<textarea id="title" wrap="off" group="title">
+			Titre de la chanson
+			</textarea>
+			<textarea id="chords" wrap="off" group="chords"></textarea>
+			<textarea id="lyrics" wrap="off" group="lyrics"></textarea>
+			<div id='showcaret'></div>
+		</div>
+		<div id="bottomtabs">
+			<span group="title">Title</span><span group="chords">Chords</span><span group="lyrics">Lyrics</span>
+		</div>
+	</div>
+	<!-- ========== Right panel =============== -->
+	<div id='result'></div>
+	<div id='underresult'></div>
+	<div id='zoom'>Zoom : <span id="zoomvalue">100</span>%</div>
+</body>
+</html>
