@@ -275,7 +275,7 @@ function CreateSVG()
 		param["ly"] = param["lry"]+param["lrdy"]*param["lbl"];
 
 		// ----- lyrics ------
-		param["lfp"] = param["lfn"].trim().replace(/\s+/g,"+");
+		param["lfp"] = param["lfn"].trim().replace(/\s*,\s*/g,"|").replace(/\s+/g,"+");
 		if (lyricslines[j] != undefined) {
 			if (lyricslines[j]=="-") // "empty" lyrics line
 				param["crdy"] = param["crdy"]*0.5;
