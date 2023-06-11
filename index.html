@@ -252,7 +252,7 @@ function CreateSVG()
 
 	param["cry"] = param["gy"];
 
-	lyricslines = param["lyrics"].split("\n");
+	lyricslines = param["lyrics"].replace("\n+","\\\\").split("\n");
 	chordlines = param["chords"].split("\n");
 	chordlines_fmt = FormatStr(param["chords"]).split("\n");
 
@@ -275,13 +275,13 @@ function CreateSVG()
 
 		// ----- lyrics ------
 		param["lfp"] = param["lfn"].trim().replace(/\s*,\s*/g,"|").replace(/\s+/g,"+");
-		if (lyricslines[j] != undefined) {
+		if (j < lyricslines.length) {
 			if (lyricslines[j]=="-") { // "empty" lyrics line
 				param["crdy"] = param["crdy"]*0.5;
 				param["lpos"] += 1; // "-"
 			}	else {
 				// split lyrics line sublines on '\\' and loop over them
-				sublines = lyricslines[j].split(/\\\\/);
+				sublines = lyricslines[j].split("\\\\");
 				for (k=0; k < sublines.length; k++) {
 					if (k > 0) {
 						// if we we are between sublines
@@ -300,7 +300,7 @@ function CreateSVG()
 		param["lpos"] += 1;
 
 		// ----- chords ------
-		if (chordlines[j] != undefined) {
+		if (j < chordlines.length) {
 			if (nochordline) {
 				chordlines[j] = Array(param["gnx"]).join("|");
 				chordlines_fmt[j] = chordlines[j];
@@ -704,58 +704,59 @@ $(function()
 	<div id='editleft'>
 		<!-- ====== File panel ===== -->
 		<div id="filemenu">
-		<label>Save : <input type="text" id="filename" value="Song"/>&nbsp;<button type="button" id="savesvg">Save .SVG</button>&nbsp;</label><button type="button" id="saveatj">Save .ATJ</button><br>
-		Read : <input type="file" id="fileinput" /><br>
+		<label>Enregistrer : <input type="text" id="filename" value="Song"/>&nbsp;<button type="button" id="savesvg">→ .SVG</button>&nbsp;</label><button type="button" id="saveatj">→ .ATJ</button><br>
+		Lire : <input type="file" id="fileinput" /><br>
 		<select id="model">
-			<option value="-1" selected="selected"> &mdash; choose model &mdash; </option>
-			<option value="0">4 columns</option>
-			<option value="1">8 columns</option>
-			<option value="2">Formating example</option>
+			<option value="-1" selected="selected"> &mdash; choisir le modèle &mdash; </option>
+			<option value="0">4 colonnes</option>
+			<option value="1">8 colonnes</option>
+			<option value="2">Exemple de formatage</option>
 		</select>
-		<button id="loadmodel">Load model &#x25B6;</button>
+		<button id="loadmodel">Charger modèle &#x25B6;</button>
 		<div id="movehzone"></div>
 		</div>
 
 		<div id='parameters'>
 			<!-- ======= Help ======== -->
-			<div class="title">Help <span style="color:gray">(click here)</span></div>
+			<div class="title">Aide <span style="color:gray">(cliquez ici)</span></div>
 			<div class="options">
-				<span class="helpcommand"><b>*</b>Bold<b>*</b></span><b>Bold</b><br>
-				<span class="helpcommand"><b>~</b>Italic<b>~</b> or <b>§</b>Italic<b>§</b></span><i>Italic</i><br>
-				<span class="helpcommand"><b>_</b>Underline<b>_</b> or <b>"</b>Underline<b>"</b></span><u>Underline</u><br>
-				<span class="helpcommand"><b>%{fill:red}</b>Red text<b>%</b></span><span style="color:red">Red text</span><br>
+				<span class="helpcommand"><b>*</b>Gras<b>*</b></span><b>Gras</b><br>
+				<span class="helpcommand"><b>~</b>Italique<b>~</b> or <b>§</b>Italique<b>§</b></span><i>Italique</i><br>
+				<span class="helpcommand"><b>_</b>Souligné<b>_</b> or <b>"</b>Souligné<b>"</b></span><u>Souligné</u><br>
+				<span class="helpcommand"><b>%{fill:red}</b>Texte en rouge<b>%</b></span><span style="color:red">Texte en rouge</span><br>
 				<span class="helpcommand"><b>%{font-size:5}</b>5mm<b>%</b></span><span style="font-size:5mm">5mm</span><br>
 				<span class="helpcommand"><b>%{font-family:monospace}</b>Courrier<b>%</b></span><span style="font-family:monospace;">Courrier</span><br>
-				<span class="helpcommand"><b>%{fill:red;font-size:3}</b>Combined<b>%</b></span><span style="color:red;font-size:3mm">Combined</span><br>
+				<span class="helpcommand"><b>%{fill:red;font-size:3}</b>Combiné<b>%</b></span><span style="color:red;font-size:3mm">Combiné</span><br>
 				<br/>
-				<i>Cells are separated by <b>|</b></i><br>
-				<i>Cell <a href="https://fr.wikipedia.org/wiki/Couleurs_du_Web" target="_blank">color</a> is declared like this : <span style="font-family:monospace">{lightPink}</span> or <span style="font-family:monospace">{#FFB6C1}</span></i>
-				<i>Line equal to <b>-</b> is reduced. Split line using <code>\\</code>.</i><br/>
+				<i>Les cellules sont séparées par « <b>|</b> »</i>.<br>
+				<i><a href="https://fr.wikipedia.org/wiki/Couleurs_du_Web" target="_blank">Couleur</a> d'une cellule : <span style="font-family:monospace">{lightPink}</span> ou <span style="font-family:monospace">{#FFB6C1}</span></i>.<br>
+				<i>Une ligne égale à <b>-</b> est réduite.</i><br>
+				<i>Une ligne qui débute avec <b>+</b> est rajoutée.</i><br/>
 				<hr>
-				<span class="key">&#x21E5;</span> = 8 spaces, <span class="key">&#x21E7;</span> + <span class="key">&#x21E5;</span> = 16 spaces.</br>
-				<span class="key">&#x21E7;</span> + Mouse
+				<span class="key">&#x21E5;</span> = 8 espaces, <span class="key">&#x21E7;</span> + <span class="key">&#x21E5;</span> = 16 espaces.</br>
+				<span class="key">&#x21E7;</span> + Souris
 						<svg version="1.1" width="2.16em" height="1.225em" viewBox="-9.00 -8.21 18.00 10.21" fill-rule="nonzero" stroke-miterlimit="10" style="font-family: &apos;Times New Roman&apos;; font-weight:normal" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"> <path d="M 5.00,0.00 A 5.00 5.00 0 1 0 -5.00,0.00" stroke="black" stroke-width="0.30" fill="none"/> <polyline stroke="black" stroke-width="0.30" fill="none" points="0.00,-5.00 0.00,0.00"/> <polyline stroke="black" stroke-width="0.30" fill="none" points="2.03,-4.57 0.00,0.00"/> <polyline stroke="black" stroke-width="0.30" fill="none" points="3.72,-3.35 0.00,0.00"/> <polyline stroke="black" stroke-width="0.30" fill="none" points="4.70,-1.71 0.00,0.00"/> <polyline stroke="black" stroke-width="0.30" fill="none" points="0.00,0.00 -4.70,-1.71"/> <polyline stroke="black" stroke-width="0.30" fill="none" points="0.00,0.00 -2.03,-4.57"/> <polyline stroke="black" stroke-width="0.30" fill="none" points="0.00,0.00 -3.72,-3.35"/> <path d="M 3.00,0.00 A 3.00 3.00 0 1 0 -3.00,0.00 L 3.00,0.00 Z" stroke="white" stroke-width="0.30" fill="white"/> <polyline stroke="black" stroke-width="0.30" fill="none" points="-7.00,0.00 7.00,0.00"/> <path d="M 5.92,-2.09 A 6.32 6.32 0 0 0 -6.07,-1.67" stroke="black" stroke-width="0.30" fill="none"/> <polygon stroke="black" stroke-width="0.30" fill="black" points="5.92,-2.09 5.69,-3.22 5.19,-2.98 5.92,-2.09"/> <polygon stroke="black" stroke-width="0.30" fill="black" points="-6.07,-1.67 -5.40,-2.61 -5.92,-2.82 -6.07,-1.67"/></svg>
 				= Zoom.<br>
-				<span class="key">&#x21E7;</span> + <span class="key">&#x2325;</span> = Show / Hide bottom panel.
+				<span class="key">&#x21E7;</span> + <span class="key">&#x2325;</span> = Afficher / Masquer le panneau inférieur.
 			</div>
 			<!-- ======= Title ======== -->
 			<div class="section" group="title">
-				<div class="title">Title</div>
+				<div class="title">Titre</div>
 				<div class="options">
 				position : <input type=number id="tx" min="0" max="210" value="10">, <input type=number id="ty" min="0" max="297" value="10"><br>
-				font size : <input type=number id="tfs" min="1" max="40" value="8" class="fontsize" textid="title">
+				taille police : <input type=number id="tfs" min="1" max="40" value="8" class="fontsize" textid="title">
 				</div>
 			</div>
 
 			<!-- ======= Chords ======== -->
 			<div class="section" group="chords">
-				<div class="title">Chords</div>
+				<div class="title">Accords</div>
 				<div class="options">
-				Grid : <input type=number id="gnx" min="1" max="10" value="4"> columns x <input type=number id="gny" min="1" max="30" value="10"> rows<br>
-				Grid position : <input type=number id="gx" min="0" max="210" value="7">,<input type=number id="gy" min="0" max="297" value="21"><br>
-				Grid size : <input type=number id="gdx" min="0" max="210" value="196">,<input type=number id="gdy" min="0" max="297" value="245"><br>
-				Chord offset : <input type=number id="codx" step="0.1" value="0.7">,<input type=number id="cody" step="0.1" value="0"><br>
-				Font size : <input type=number id="cfs" min="1" max="40" value="8" class="fontsize" textid="chords"><br>
+				Grille : <input type=number id="gnx" min="1" max="10" value="4"> colonnes x <input type=number id="gny" min="1" max="30" value="10"> lignes<br>
+				Position : <input type=number id="gx" min="0" max="210" value="7">,<input type=number id="gy" min="0" max="297" value="21"><br>
+				Taille : <input type=number id="gdx" min="0" max="210" value="196">,<input type=number id="gdy" min="0" max="297" value="245"><br>
+				Décalage accords : <input type=number id="codx" step="0.1" value="0.7">,<input type=number id="cody" step="0.1" value="0"><br>
+				Taille police : <input type=number id="cfs" min="1" max="40" value="8" class="fontsize" textid="chords"><br>
 				<hr>
 				Transformation :
 				<button onclick="UpChords()">&#x266F;</button>
@@ -765,17 +766,17 @@ $(function()
 
 			<!-- ======= Lyrics ======== -->
 			<div class="section" group="lyrics">
-				<div class="title">Lyrics</div>
+				<div class="title">Paroles</div>
 				<div class="options">
 					Position  : <input type=number id="lrox" min="0" max="100" value="3">,<input type=number id="lroy" min="0" max="100" value="3"><br>
-					Size  :	<input type=number id="lrdx" min="0" max="210" value="195">,<input type=number id="lrdy" min="0" max="35" value="7"><br>
-					Font size : <input type=number id="lfs" min="1" max="40" value="5" class="fontsize" textid="lyrics"><br>
-					Baseline position : <input type=number id="lbl" min="0" max="1" value="0.7" step="0.1"><br>
-					Background transparacy : <input type="range" id="lrt" min="0" max="1" step="0.1" value="0.7"/><br>
-					Font name (from <a href="https://www.google.com/fonts" target="_blank">Google Fonts</a>): <input type="text" id="lfn"/><br>
+					Taille  :	<input type=number id="lrdx" min="0" max="210" value="195">,<input type=number id="lrdy" min="0" max="35" value="7"><br>
+					Taille police : <input type=number id="lfs" min="1" max="40" value="5" class="fontsize" textid="lyrics"><br>
+					Décalage vertical : <input type=number id="lbl" min="0" max="1" value="0.7" step="0.1"><br>
+					Transparence du fond : <input type="range" id="lrt" min="0" max="1" step="0.1" value="0.7" style="vertical-align:middle;"/><br>
+					Police (de <a href="https://www.google.com/fonts" target="_blank">Google Fonts</a>): <input type="text" id="lfn"/><br>
 					examples : <select id="font-examples">
-						<option value="initial"> &mdash; select font &mdash;</option>
-						<option value="" style="color:green">&mdash; reset &mdash;</option>
+						<option value="initial"> &mdash; choisir la police &mdash;</option>
+						<option value="" style="color:green">&mdash; réinitialiser &mdash;</option>
 						<option value="Stint Ultra Condensed">Stint Ultra Condensed</option>
 						<option value="Medula One">Medula One</option>
 						<option value="Yanone Kaffeesatz">Yanone Kaffeesatz</option>
@@ -801,7 +802,7 @@ $(function()
 			<div id='showcaret'></div>
 		</div>
 		<div id="bottomtabs">
-			<span group="title">Title</span><span group="chords">Chords</span><span group="lyrics">Lyrics</span>
+			<span group="title">Titre</span><span group="chords">Accords</span><span group="lyrics">Paroles</span>
 		</div>
 	</div>
 	<!-- ========== Right panel =============== -->
